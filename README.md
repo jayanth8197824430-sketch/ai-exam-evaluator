@@ -116,7 +116,7 @@ Open **http://127.0.0.1:5000** in your browser.
 
 ## 📂 Project Structure
 
-`	ext
+```text
 ├── app.py                  # Main Flask application & API routes
 ├── evaluator.py            # Gemini Multimodal engine & VTU Choice Rule Engine
 ├── knowledge_engine.py     # ChromaDB Dynamic RAG retriever (offline-cached)
@@ -127,7 +127,14 @@ Open **http://127.0.0.1:5000** in your browser.
 ├── uploads/                # Temporary document storage
 ├── .env.example            # Environment template
 └── requirements.txt        # Python dependencies
-`
+```
+
+---
+
+## 👨‍💻 Author & Developer
+- **Jayanth**
+- GitHub: [@jayanth8197824430-sketch](https://github.com/jayanth8197824430-sketch)
+- Email: `jayanth8197824430@gmail.com`
 
 ---
 
