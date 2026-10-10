@@ -1,0 +1,11 @@
+flask
+opencv-python
+easyocr
+chromadb
+sentence-transformers
+google-genai
+python-dotenv
+pypdf
+pymupdf
+torch
+pillow

@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBMS Answer Evaluator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
+
+        /* Futuristic Advanced AI Dark Theme */
+        :root {
+            --bg-main: #0B0F19;
+            --bg-panel: rgba(15, 23, 42, 0.65);
+            --primary: #00F0FF; /* Neon Cyan */
+            --primary-hover: #00D1FF;
+            --secondary: #7000FF; /* Neon Purple */
+            --accent: #FF0055;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --success: #10B981;
+            --error: #EF4444;
+            --glass-border: rgba(0, 240, 255, 0.2);
+            --glow: 0 0 15px rgba(0, 240, 255, 0.4);
+            --glow-strong: 0 0 30px rgba(0, 240, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* Cyber Grid Background */
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center center;
+        }
+
+        /* Glass Header */
+        header {
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Main Container Layout */
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            padding: 1.5rem;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2.5rem;
+            border-radius: 12px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Custom Scrollbar */
+        .panel::-webkit-scrollbar { width: 6px; }
+        .panel::-webkit-scrollbar-track { background: transparent; }
+        .panel::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 10px; }
+        .panel::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.8); }
+
+        .left-panel {
+            max-width: 480px;
+        }
+
+        .section-heading {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--text-main);
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .section-heading::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: -8px;
+            width: 60px; height: 3px;
+            background: var(--primary);
+            box-shadow: var(--glow);
+        }
+
+        .form-group {
+            margin-bottom: 1.75rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text-main);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: var(--glow);
+        }
+
+        .file-upload-box {
+            border: 1px dashed rgba(0, 240, 255, 0.4);
+            border-radius: 12px;
+            padding: 2rem 1rem;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload-box:hover {
+            border-color: var(--primary);
+            background: rgba(0, 240, 255, 0.05);
+            box-shadow: var(--glow);
+        }
+
+        .file-upload-box input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .list-box ul {
+            list-style: none;
+            padding-left: 0.5rem;
+        }
+        
+        .list-box ul li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+        
+        .list-box ul li::before {
+            content: ">";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        /* Header Team Dropdown */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .team-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .team-btn {
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: var(--primary);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .team-btn:hover {
+            background: rgba(0, 240, 255, 0.2);
+            border-color: var(--primary);
+            box-shadow: var(--glow);
+        }
+
+        .team-dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 10px);
+            background: rgba(11, 15, 25, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 14px 18px;
+            min-width: 290px;
+            box-shadow: var(--glow-strong);
+            z-index: 1000;
+        }
+
+        .team-dropdown:hover .team-dropdown-menu,
+        .team-dropdown:focus-within .team-dropdown-menu {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .team-dropdown-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+            padding-bottom: 6px;
+        }
+
+        .team-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .team-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .usn-tag {
+            background: rgba(0, 240, 255, 0.12);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--primary);
+            font-family: monospace;
+            font-size: 0.75rem;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .file-text {
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .file-subtext {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .file-name-display {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: none;
+            background: rgba(0, 240, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            margin-top: 1rem;
+            box-shadow: var(--glow-strong);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.8);
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        button:disabled {
+            background: #334155;
+            color: #64748B;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Right Panel */
+        .right-panel {
+            position: relative;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .empty-state img {
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glow);
+            transition: transform 0.5s ease;
+            filter: grayscale(80%) sepia(20%) hue-rotate(180deg);
+        }
+        
+        .empty-state img:hover {
+            transform: scale(1.05);
+            filter: grayscale(0%);
+        }
+
+        .empty-state h3 {
+            margin-top: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Loader */
+        .loader-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(0, 240, 255, 0.1);
+            border-top-color: var(--primary);
+            border-bottom-color: var(--secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--glow);
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Report Card */
+        .report-card {
+            display: none;
+            max-width: 850px;
+            margin: 0 auto;
+            background: var(--bg-panel);
+            border-radius: 12px;
+            border: 1px solid var(--primary);
+            box-shadow: var(--glow-strong);
+            overflow: hidden;
+            margin-bottom: 2.5rem;
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .report-header {
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid var(--primary);
+            padding: 2.5rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        
+        .report-header h2 { margin: 0; font-size: 2rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;}
+        .report-header p { margin: 0; color: var(--text-muted); font-size: 1rem; margin-top: 0.5rem; font-weight: 600; text-transform: uppercase;}
+
+        .score-pill {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-size: 2.5rem;
+            font-weight: 900;
+            box-shadow: var(--glow);
+            text-align: center;
+            font-family: monospace;
+        }
+        
+        .score-pill span:last-child {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+        }
+
+        .report-body {
+            padding: 2.5rem;
+        }
+
+        .feedback-box {
+            background: rgba(0, 240, 255, 0.05);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 2rem;
+            color: var(--text-main);
+            line-height: 1.7;
+            font-weight: 500;
+        }
+
+        .feedback-title {
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .list-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .list-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .list-box.strengths {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        .list-box.strengths h3 { color: var(--success); margin-bottom: 1.25rem; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+        .list-box.strengths li { color: #A7F3D0; margin-bottom: 0.75rem; margin-left: 1.5rem; font-weight: 500; line-height: 1.5;}
+
+        .list-box.missing {
+            border-color: rgba(239, 68, 68, 0.4);
+            background: rgba(239, 68, 68, 0.05);
+        }
+        .list-box.missing h3 { color: var(--error); margin-bottom: 1.25rem; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+        .list-box.missing li { color: #FECACA; margin-bottom: 0.75rem; margin-left: 1.5rem; font-weight: 500; line-height: 1.5;}
+
+        /* Tech Details */
+        .tech-details {
+            display: none;
+            max-width: 850px;
+            margin: 0 auto;
+            background: var(--bg-panel);
+            border-radius: 12px;
+            box-shadow: var(--glow);
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 1px solid var(--glass-border);
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        .tech-header {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 1.25rem 2.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+        }
+
+        .ocr-terminal {
+            background: #000;
+            color: #00FF00;
+            font-family: 'Consolas', monospace;
+            padding: 1.5rem;
+            border-radius: 8px;
+            height: 180px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            box-shadow: inset 0 4px 10px rgba(0,240,255,0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+        
+        .ocr-terminal-q {
+            color: var(--primary); 
+        }
+
+        .ocr-terminal::-webkit-scrollbar { width: 6px; }
+        .ocr-terminal::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 10px; }
+
+        /* Rigor Selector */
+        .rigor-selector {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .rigor-pill {
+            flex: 1;
+            cursor: pointer;
+            position: relative;
+        }
+        .rigor-pill input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .rigor-btn {
+            display: block;
+            text-align: center;
+            padding: 8px 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        .rigor-pill input:checked + .rigor-btn {
+            border-color: var(--primary);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+            color: #fff;
+        }
+        .rigor-pill input:checked + .rigor-btn.generous {
+            border-color: #10B981;
+            background: rgba(16, 185, 129, 0.15);
+            color: #6EE7B7;
+        }
+        .rigor-pill input:checked + .rigor-btn.standard {
+            border-color: #F59E0B;
+            background: rgba(245, 158, 11, 0.15);
+            color: #FCD34D;
+        }
+        .rigor-pill input:checked + .rigor-btn.strict {
+            border-color: #EF4444;
+            background: rgba(239, 68, 68, 0.15);
+            color: #FCA5A5;
+        }
+        .rigor-caption {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        /* VTU Grade Badge & Actions */
+        .report-top-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .vtu-grade-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(0, 240, 255, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+        }
+        .btn-pdf {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(112, 0, 255, 0.25));
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-pdf:hover {
+            background: var(--primary);
+            color: #050B14;
+            box-shadow: var(--glow);
+            transform: translateY(-1px);
+        }
+
+        /* Question Breakdown Enhanced */
+        .citation-tag {
+            background: rgba(0, 240, 255, 0.12);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--primary);
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .evidence-box {
+            background: rgba(0, 0, 0, 0.35);
+            border-left: 3px solid rgba(0, 240, 255, 0.4);
+            padding: 8px 12px;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.82rem;
+            color: #CBD5E1;
+            margin: 8px 0;
+            font-style: italic;
+        }
+        .rubric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .rubric-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .rubric-label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .rubric-score {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #38BDF8;
+            font-family: monospace;
+            margin-top: 2px;
+        }
+        .q-action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            gap: 8px;
+        }
+        .q-sub-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #94A3B8;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .q-sub-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0, 240, 255, 0.08);
+        }
+        .teacher-override-panel {
+            display: none;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+        .ask-examiner-panel {
+            display: none;
+            background: rgba(112, 0, 255, 0.1);
+            border: 1px solid rgba(112, 0, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+
+        /* Split-Screen Inspector Modal */
+        .inspector-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .inspector-backdrop {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 11, 20, 0.85);
+            backdrop-filter: blur(8px);
+        }
+        .inspector-content {
+            position: relative;
+            z-index: 10000;
+            width: 95vw;
+            max-width: 1400px;
+            height: 90vh;
+            background: #0B111E;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 50px rgba(0, 240, 255, 0.3);
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+        .inspector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+        }
+        .inspector-close {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .inspector-close:hover {
+            border-color: #EF4444;
+            color: #EF4444;
+            transform: scale(1.1);
+        }
+        .inspector-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .inspector-page-pane {
+            flex: 1.2;
+            border-right: 1px solid rgba(0, 240, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            background: #030712;
+        }
+        .inspector-eval-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(11, 17, 30, 0.95);
+        }
+        .pane-header {
+            padding: 10px 18px;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .inspector-img-container {
+            flex: 1;
+            overflow: auto;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .inspector-img-container img {
+            max-width: 100%;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.8);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-title">
+            ✨ Intelligent Assessment and Grading using AI & NLP
+        </div>
+        <div class="header-right">
+            <div style="font-size: 0.85rem; color: #94A3B8; font-weight: 500;">Powered by Gemini & ChromaDB</div>
+            <div class="team-dropdown">
+                <button type="button" class="team-btn">👥 Team & USNs ▾</button>
+                <div class="team-dropdown-menu">
+                    <div class="team-dropdown-title">Project Contributors</div>
+                    <div class="team-item"><span>Jayanth.S</span> <span class="usn-tag">1DB23CI034</span></div>
+                    <div class="team-item"><span>Dheeraj Naik</span> <span class="usn-tag">1DB23CI024</span></div>
+                    <div class="team-item"><span>Sanjay B</span> <span class="usn-tag">1DB23CI092</span></div>
+                    <div class="team-item"><span>Seragara Kiran M</span> <span class="usn-tag">1DB23CI095</span></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Left Panel: Input Form -->
+        <div class="panel left-panel">
+            <div class="section-heading">Assessment Details</div>
+            
+            <form id="evaluationForm">
+                
+                <div class="form-group">
+                    <label for="subject">📚 Select Subject</label>
+                    <select id="subject" name="subject" required>
+                        <option value="dbms">Database Management Systems (DBMS)</option>
+                        <option value="cn">Computer Networks (CN)</option>
+                        <option value="dsa">Data Structures and Algorithms (DSA)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>⚖️ Evaluation Strictness (Rigor Mode)</label>
+                    <div class="rigor-selector">
+                        <label class="rigor-pill">
+                            <input type="radio" name="strictness" value="generous" onchange="updateRigorCaption(this.value)">
+                            <span class="rigor-btn generous">🟢 Generous</span>
+                        </label>
+                        <label class="rigor-pill">
+                            <input type="radio" name="strictness" value="standard" checked onchange="updateRigorCaption(this.value)">
+                            <span class="rigor-btn standard">🟡 Standard (IA)</span>
+                        </label>
+                        <label class="rigor-pill">
+                            <input type="radio" name="strictness" value="strict" onchange="updateRigorCaption(this.value)">
+                            <span class="rigor-btn strict">🔴 Strict (VTU)</span>
+                        </label>
+                    </div>
+                    <div class="rigor-caption" id="rigorCaption">Balanced university grading with standard rubric criteria.</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>📄 Question Paper</label>
+                    <div class="file-upload-box">
+                        <div class="file-text">Click to upload Question Paper</div>
+                        <div class="file-subtext">PNG, JPG, PDF up to 10MB (or drag & drop)</div>
+                        <input type="file" id="question_image" name="question_image" accept="image/png, image/jpeg, application/pdf" required>
+                        <div id="qFileNameDisplay" class="file-name-display"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>✍️ Answer Sheet</label>
+                    <div class="file-upload-box">
+                        <div class="file-text">Click to upload Answer Sheet</div>
+                        <div class="file-subtext">PNG, JPG, PDF up to 10MB (or drag & drop)</div>
+                        <input type="file" id="answer_image" name="answer_image" accept="image/png, image/jpeg, application/pdf" required>
+                        <div id="aFileNameDisplay" class="file-name-display"></div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn">🚀 Evaluate Answer</button>
+            </form>
+        </div>
+
+        <!-- Right Panel: Results & Feedback -->
+        <div class="panel right-panel">
+            
+            <div class="empty-state" id="emptyState">
+                <img src="/static/books_art.jpg" alt="Upload Documents" style="max-width: 280px; opacity: 0.9;">
+                <h3>Ready to Evaluate</h3>
+                <p style="margin-top: 0.5rem;">Select a subject and upload the files to begin.</p>
+            </div>
+
+            <div class="loader-container" id="loader">
+                <div class="spinner"></div>
+                <h3 id="loaderTitle" style="color: var(--primary); font-weight: 700; font-size: 1.2rem; margin-top: 10px;">Evaluating Submission with Multimodal AI...</h3>
+                
+                <div style="margin-top: 20px; width: 100%; max-width: 440px; text-align: left; background: rgba(0,0,0,0.5); padding: 18px; border-radius: 12px; border: 1px solid var(--glass-border); box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                    <div id="step1" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 0.9rem;">
+                        <span id="icon1" style="font-size: 1.1rem;">⚡</span>
+                        <span id="text1" style="color: var(--primary); font-weight: 700;">1. Preprocessing & Rendering Exam Pages</span>
+                    </div>
+                    <div id="step2" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 0.9rem;">
+                        <span id="icon2" style="font-size: 1.1rem;">⏳</span>
+                        <span id="text2" style="color: var(--text-muted); font-weight: 500;">2. Ingesting Curriculum Ground Truth (ChromaDB)</span>
+                    </div>
+                    <div id="step3" style="display: flex; align-items: center; gap: 12px; font-size: 0.9rem;">
+                        <span id="icon3" style="font-size: 1.1rem;">⏳</span>
+                        <span id="text3" style="color: var(--text-muted); font-weight: 500;">3. Multimodal Grading (Handwriting + Diagrams)</span>
+                    </div>
+                </div>
+                
+                <p style="color: var(--primary); margin-top: 15px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px;">⚡ High-speed AI grading in progress (~20–25s)</p>
+            </div>
+
+            <div id="errorMsg"></div>
+
+            <div class="report-card" id="reportCard">
+                <div class="report-header">
+                    <div>
+                        <h2>Evaluation Report</h2>
+                        <div class="report-top-meta">
+                            <span class="vtu-grade-badge" id="vtuGradeBadge">🏆 First Class with Distinction</span>
+                            <span id="detectedSubjectBadge" style="font-size: 0.82rem; color: #94A3B8; font-weight: 600;"></span>
+                        </div>
+                        <div id="vtuSchemeBanner" style="display: none; margin-top: 10px; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; color: #38BDF8; font-weight: 600;">
+                            ✨ VTU Best-of-Module Scheme Applied: 5 Modules evaluated with internal choice normalization.
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+                        <div class="score-pill">
+                            <span id="scoreRange">0</span> <span>/ <span id="maxMarks">10</span></span>
+                            <div style="font-size: 0.85rem; color: #38BDF8; font-weight: 800; margin-top: 2px;" id="scorePercentBadge">0%</div>
+                            <div id="attemptedScoreDisplay" style="font-size: 0.72rem; color: #94A3B8; margin-top: 2px; font-family: sans-serif;"></div>
+                        </div>
+                        <button type="button" class="btn-pdf" id="downloadPdfBtn" onclick="generateOfficialGradeCard()">
+                            📥 Download Marksheet (PDF)
+                        </button>
+                    </div>
+                </div>
+                <div style="text-align: right; padding: 10px 20px 0 0; font-size: 0.85rem; color: #6b7280; font-weight: 600;">
+                    ⏱️ Processed in <span id="evalTime">0.00</span>s
+                </div>
+                <div class="report-body">
+                    <div class="feedback-title" style="margin-bottom: 15px;">📝 Question Breakdown</div>
+                    <div id="questionsContainer" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px;">
+                        <!-- JS will inject question cards here -->
+                    </div>
+
+                    <div class="feedback-title">🎯 Overall Feedback</div>
+                    <div class="feedback-box" id="feedbackText"></div>
+                    
+                    <div class="grid-2">
+                        <div class="list-box strengths">
+                            <h3>✅ Core Strengths</h3>
+                            <ul id="strengthsList"></ul>
+                        </div>
+                        <div class="list-box missing">
+                            <h3>❌ Missing Concepts</h3>
+                            <ul id="missingList"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Details for Question -->
+            <div id="techDetailsQ" class="tech-details">
+                <div class="tech-header">Question Extraction Details</div>
+                <div class="report-body grid-2" style="padding-top: 1rem;">
+                    <div>
+                        <label style="margin-bottom: 8px;">OCR Extracted Question</label>
+                        <div class="ocr-terminal ocr-terminal-q" id="ocrQuestionText"></div>
+                    </div>
+                    <div>
+                        <label style="margin-bottom: 8px;">Question Image</label>
+                        <div class="image-preview-container">
+                            <img id="qImagePreview" alt="Uploaded Question">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Details for Answer -->
+            <div id="techDetailsA" class="tech-details">
+                <div class="tech-header">Answer Extraction Details</div>
+                <div class="report-body grid-2" style="padding-top: 1rem;">
+                    <div>
+                        <label style="margin-bottom: 8px;">OCR Extracted Answer</label>
+                        <div class="ocr-terminal" id="ocrAnswerText"></div>
+                    </div>
+                    <div>
+                        <label style="margin-bottom: 8px;">Answer Image</label>
+                        <div class="image-preview-container">
+                            <img id="aImagePreview" alt="Uploaded Answer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Split-Screen Inspector Modal -->
+    <div id="inspectorModal" class="inspector-modal" style="display: none;">
+        <div class="inspector-backdrop" onclick="closeInspector()"></div>
+        <div class="inspector-content">
+            <div class="inspector-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.3rem;">🔬</span>
+                    <div>
+                        <div style="font-weight: 800; color: var(--primary); text-transform: uppercase; font-size: 1.05rem;" id="inspTitle">Exam Script Split-Screen Inspector</div>
+                        <div style="font-size: 0.75rem; color: #94A3B8;" id="inspSubTitle">Side-by-side Page & Assessment Verification</div>
+                    </div>
+                </div>
+                <button type="button" class="inspector-close" onclick="closeInspector()">✕</button>
+            </div>
+            <div class="inspector-body">
+                <!-- Left: Handwritten Page Preview -->
+                <div class="inspector-page-pane">
+                    <div class="pane-header">
+                        <span id="inspPageLabel">📄 Student Answer Sheet (Page Preview)</span>
+                        <a id="inspDownloadLink" href="#" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: underline;">Open High-Res</a>
+                    </div>
+                    <div class="inspector-img-container">
+                        <img id="inspPageImg" src="" alt="Student Handwritten Script">
+                    </div>
+                </div>
+                <!-- Right: AI Evaluation & Rubric Details -->
+                <div class="inspector-eval-pane">
+                    <div class="pane-header">
+                        <span>🤖 Multimodal AI Assessment & Rubric</span>
+                        <span id="inspScorePill" style="font-weight: 800; color: #10B981; font-family: monospace;"></span>
+                    </div>
+                    <div id="inspEvalDetails" style="padding: 18px; overflow-y: auto; height: calc(100% - 40px);">
+                        <!-- Injected dynamic card details -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        // Set up file displays
+        const qFileInput = document.getElementById('question_image');
+        const qFileNameDisplay = document.getElementById('qFileNameDisplay');
+        
+        qFileInput.addEventListener('change', function(e) {
+            if(this.files && this.files[0]) {
+                const file = this.files[0];
+                qFileNameDisplay.textContent = "Selected: " + file.name;
+                qFileNameDisplay.style.display = 'block';
+            } else {
+                qFileNameDisplay.style.display = 'none';
+            }
+        });
+
+        const aFileInput = document.getElementById('answer_image');
+        const aFileNameDisplay = document.getElementById('aFileNameDisplay');
+        
+        aFileInput.addEventListener('change', function(e) {
+            if(this.files && this.files[0]) {
+                const file = this.files[0];
+                aFileNameDisplay.textContent = "Selected: " + file.name;
+                aFileNameDisplay.style.display = 'block';
+            } else {
+                aFileNameDisplay.style.display = 'none';
+            }
+        });
+
+        // --- Drag and Drop Setup ---
+        function setupDragAndDrop(boxElement, inputElement) {
+            boxElement.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                boxElement.style.borderColor = 'var(--primary)';
+                boxElement.style.background = 'rgba(99, 102, 241, 0.1)';
+            });
+            boxElement.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                boxElement.style.borderColor = '';
+                boxElement.style.background = 'rgba(255, 255, 255, 0.4)';
+            });
+            boxElement.addEventListener('drop', (e) => {
+                e.preventDefault();
+                boxElement.style.borderColor = '';
+                boxElement.style.background = 'rgba(255, 255, 255, 0.4)';
+                if (e.dataTransfer.files.length > 0) {
+                    inputElement.files = e.dataTransfer.files;
+                    inputElement.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+        
+        const qBox = document.querySelector('input#question_image').closest('.file-upload-box');
+        const aBox = document.querySelector('input#answer_image').closest('.file-upload-box');
+        setupDragAndDrop(qBox, qFileInput);
+        setupDragAndDrop(aBox, aFileInput);
+
+        // --- Smart Paste Setup ---
+        window.addEventListener('paste', function(e) {
+            const items = e.clipboardData.items;
+            let file = null;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].kind === 'file') {
+                    file = items[i].getAsFile();
+                    break;
+                }
+            }
+            if (file) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                // Smart Routing: If Q is empty, put in Q. Else put in A.
+                if (!qFileInput.files || qFileInput.files.length === 0) {
+                    qFileInput.files = dt.files;
+                    qFileInput.dispatchEvent(new Event('change'));
+                } else {
+                    aFileInput.files = dt.files;
+                    aFileInput.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+
+        // Form submission handling
+        document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // UI State updates
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('reportCard').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('loader').style.display = 'flex';
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Processing...";
+
+            // Reset and animate the 3-stage pipeline tracker
+            const icon1 = document.getElementById('icon1');
+            const icon2 = document.getElementById('icon2');
+            const icon3 = document.getElementById('icon3');
+            const text1 = document.getElementById('text1');
+            const text2 = document.getElementById('text2');
+            const text3 = document.getElementById('text3');
+            
+            icon1.textContent = '⚡';
+            icon2.textContent = '⏳';
+            icon3.textContent = '⏳';
+            text1.style.color = 'var(--primary)';
+            text2.style.color = 'var(--text-muted)';
+            text3.style.color = 'var(--text-muted)';
+
+            const timerStep2 = setTimeout(() => {
+                icon1.textContent = '✅';
+                text1.style.color = '#10B981';
+                icon2.textContent = '⚡';
+                text2.style.color = 'var(--primary)';
+            }, 3000);
+
+            const timerStep3 = setTimeout(() => {
+                icon2.textContent = '✅';
+                text2.style.color = '#10B981';
+                icon3.textContent = '⚡';
+                text3.style.color = 'var(--primary)';
+            }, 7000);
+
+            try {
+                // High-speed direct multimodal request
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000);
+                
+                const response = await fetch('/evaluate', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                clearTimeout(timerStep2);
+                clearTimeout(timerStep3);
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Evaluation could not be completed.');
+                }
+                
+                // Mark all steps complete
+                icon1.textContent = '✅';
+                icon2.textContent = '✅';
+                icon3.textContent = '✅';
+                text1.style.color = '#10B981';
+                text2.style.color = '#10B981';
+                // Global evaluation store
+                window.currentEvaluationData = data;
+                
+                // Set Subject and VTU Grade
+                const detectedSub = data.evaluation.detected_subject || (data.subject ? data.subject.toUpperCase() : 'ENGINEERING');
+                document.getElementById('detectedSubjectBadge').textContent = `Subject: ${detectedSub}`;
+                
+                const vtuBadge = document.getElementById('vtuGradeBadge');
+                vtuBadge.textContent = `🏆 ${data.evaluation.vtu_grade || 'Evaluated'}`;
+                
+                // Recalculate and display total score & percentage
+                recalculateOverallScores();
+                
+                document.getElementById('feedbackText').textContent = data.evaluation.general_feedback;
+                
+                // Render Enhanced Question Cards
+                renderQuestionBreakdown(data.evaluation.question_breakdown);
+                
+                // Populate Time
+                if (data.processing_time_sec) {
+                    document.getElementById('evalTime').textContent = data.processing_time_sec;
+                }
+                
+                // Populate Strengths
+                const strengthsList = document.getElementById('strengthsList');
+                strengthsList.innerHTML = '';
+                if (data.evaluation.strengths && data.evaluation.strengths.length > 0) {
+                    data.evaluation.strengths.forEach(s => {
+                        const li = document.createElement('li');
+                        li.innerText = s;
+                        strengthsList.appendChild(li);
+                    });
+                } else {
+                    strengthsList.innerHTML = '<li style="color: #6B7280; list-style: none; margin-left: 0;">None identified.</li>';
+                }
+                
+                // Populate Missing Concepts
+                const missingList = document.getElementById('missingList');
+                missingList.innerHTML = '';
+                if (data.evaluation.missing_concepts && data.evaluation.missing_concepts.length > 0) {
+                    data.evaluation.missing_concepts.forEach(m => {
+                        const li = document.createElement('li');
+                        li.innerText = m;
+                        missingList.appendChild(li);
+                    });
+                } else {
+                    missingList.innerHTML = '<li style="color: #047857; list-style: none; margin-left: 0;">None identified. All core concepts covered!</li>';
+                }
+                
+                // Populate Technical Terminals
+                const ocrQ = document.getElementById('ocrQuestionText');
+                if (ocrQ && data.extracted_question) {
+                    ocrQ.textContent = data.extracted_question;
+                }
+                const ocrA = document.getElementById('ocrAnswerText');
+                if (ocrA && data.extracted_text) {
+                    ocrA.textContent = data.extracted_text;
+                }
+                if (data.q_image_filename) {
+                    document.getElementById('qImagePreview').src = '/uploads/' + data.q_image_filename;
+                }
+                if (data.a_image_filename) {
+                    document.getElementById('aImagePreview').src = '/uploads/' + data.a_image_filename;
+                }
+                
+                // Show Report
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('reportCard').style.display = 'block';
+                
+            } catch (err) {
+                clearTimeout(timerStep2);
+                clearTimeout(timerStep3);
+                document.getElementById('loader').style.display = 'none';
+                const errorMsg = document.getElementById('errorMsg');
+                errorMsg.innerHTML = `
+                    <div style="display: flex; align-items: flex-start; gap: 14px; background: rgba(239, 68, 68, 0.1); border-left: 4px solid #EF4444; border-radius: 8px; padding: 16px;">
+                        <span style="font-size: 1.5rem;">⚠️</span>
+                        <div>
+                            <div style="font-weight: 700; color: #EF4444; font-size: 1rem; margin-bottom: 4px;">Evaluation Notice</div>
+                            <div style="color: #F8FAFC; font-size: 0.9rem; line-height: 1.4;">${err.message}</div>
+                            <div style="color: #94A3B8; font-size: 0.8rem; margin-top: 8px;">💡 <strong>Suggestions:</strong> Make sure both documents are uploaded, match the curriculum, and your Python backend is active.</div>
+                        </div>
+                    </div>
+                `;
+                errorMsg.style.display = 'block';
+                document.getElementById('emptyState').style.display = 'flex';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Evaluate Answer';
+            }
+        });
+
+        // Strictness caption handler
+        function updateRigorCaption(val) {
+            const cap = document.getElementById('rigorCaption');
+            if (!cap) return;
+            if (val === 'generous') {
+                cap.textContent = '🟢 Generous: High partial marking for conceptual attempts. Ideal for practice tests.';
+            } else if (val === 'strict') {
+                cap.textContent = '🔴 Strict: Rigorous VTU Board standard. Demands exact terminology and precise diagram labels.';
+            } else {
+                cap.textContent = '🟡 Standard: Balanced university grading with standard rubric criteria.';
+            }
+        }
+
+        // Render Question Breakdown with Rubrics, Teacher Override & Ask Examiner
+        function renderQuestionBreakdown(questions) {
+            const qContainer = document.getElementById('questionsContainer');
+            qContainer.innerHTML = '';
+            
+            if (!questions || questions.length === 0) {
+                qContainer.innerHTML = '<div style="color: #6b7280; font-style: italic;">No specific questions could be identified.</div>';
+                return;
+            }
+            
+            questions.forEach((q, idx) => {
+                const qCard = document.createElement('div');
+                qCard.style.padding = '18px';
+                qCard.style.background = 'rgba(0, 0, 0, 0.45)';
+                qCard.style.borderRadius = '10px';
+                qCard.style.border = '1px solid rgba(0, 240, 255, 0.2)';
+                qCard.style.boxShadow = 'inset 0 0 10px rgba(0, 240, 255, 0.05)';
+                qCard.id = `qCard_${idx}`;
+                
+                let scoreColor = '#10B981';
+                const ratio = q.awarded_marks / q.max_marks;
+                if (ratio < 0.5) scoreColor = '#EF4444';
+                else if (ratio < 0.8) scoreColor = '#F59E0B';
+                
+                // Rubric Breakdown HTML
+                const rb = q.rubric_breakdown || {
+                    concept_score: Math.round(q.awarded_marks * 0.4 * 10) / 10,
+                    concept_max: Math.round(q.max_marks * 0.4),
+                    diagram_score: Math.round(q.awarded_marks * 0.3 * 10) / 10,
+                    diagram_max: Math.round(q.max_marks * 0.3),
+                    explanation_score: Math.round(q.awarded_marks * 0.3 * 10) / 10,
+                    explanation_max: Math.round(q.max_marks * 0.3)
+                };
+                
+                const pageCitation = q.page_citations ? `📍 ${q.page_citations}` : '📍 Page Identified in Booklet';
+                const evidenceText = q.evidence_quote ? `"${q.evidence_quote}"` : 'Handwritten answer and diagram identified by Multimodal Vision.';
+                
+                // VTU Module choice status
+                let moduleTagHtml = '';
+                if (q.module_num > 0) {
+                    if (q.is_considered === false) {
+                        moduleTagHtml = `<div style="background: rgba(245, 158, 11, 0.15); border: 1px dashed #F59E0B; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; color: #FCD34D; font-weight: 700; margin-bottom: 10px;">⚠️ ${q.module_status || 'Extra Attempt - Excluded from Official VTU Total'}</div>`;
+                    } else {
+                        moduleTagHtml = `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #6EE7B7; font-size: 0.72rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-left: 6px;">Module ${q.module_num} Counted</span>`;
+                    }
+                }
+                
+                qCard.innerHTML = `
+                    ${q.is_considered === false ? moduleTagHtml : ''}
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 12px;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; color: #F8FAFC; font-size: 0.98rem; margin-bottom: 4px;">
+                                ${q.question_text}
+                                ${q.is_considered !== false && q.module_num > 0 ? moduleTagHtml : ''}
+                            </div>
+                            <span class="citation-tag">${pageCitation}</span>
+                        </div>
+                        <div id="scoreBadge_${idx}" style="font-weight: 800; color: ${scoreColor}; font-size: 1.15rem; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 8px; border: 1px solid ${scoreColor}50; font-family: monospace; white-space: nowrap;">
+                            <span id="awardedVal_${idx}">${q.awarded_marks}</span> / ${q.max_marks}
+                        </div>
+                    </div>
+
+                    <div class="evidence-box">
+                        <strong style="color: #38BDF8;">🔎 Student Evidence:</strong> ${evidenceText}
+                    </div>
+
+                    <!-- 3-Part Rubric Breakdown -->
+                    <div class="rubric-grid">
+                        <div class="rubric-item">
+                            <div class="rubric-label">💡 Concept & Definitions</div>
+                            <div class="rubric-score">${rb.concept_score} / ${rb.concept_max}</div>
+                        </div>
+                        <div class="rubric-item">
+                            <div class="rubric-label">📐 Diagram & Layout</div>
+                            <div class="rubric-score">${rb.diagram_score} / ${rb.diagram_max}</div>
+                        </div>
+                        <div class="rubric-item">
+                            <div class="rubric-label">⚙️ Working & Proof</div>
+                            <div class="rubric-score">${rb.explanation_score} / ${rb.explanation_max}</div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.88rem; color: #94A3B8; line-height: 1.5; margin-top: 6px;">
+                        <strong style="color: #00F0FF;">EXAMINER REASONING:</strong> <span id="reasoningText_${idx}">${q.reasoning}</span>
+                    </div>
+
+                    <!-- Action Bar with Inspector, Teacher Override & Clarification -->
+                    <div class="q-action-bar">
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" class="q-sub-btn" style="border-color: rgba(0, 240, 255, 0.4); color: #00F0FF;" onclick="openInspector(${idx})">
+                                🔬 Inspect Page
+                            </button>
+                            <button type="button" class="q-sub-btn" onclick="toggleTeacherOverride(${idx})">
+                                ✏️ Teacher Override
+                            </button>
+                        </div>
+                        <button type="button" class="q-sub-btn" onclick="toggleAskExaminer(${idx})">
+                            💬 Ask Examiner
+                        </button>
+                    </div>
+
+                    <!-- Teacher Override Panel -->
+                    <div class="teacher-override-panel" id="overridePanel_${idx}">
+                        <div style="font-size: 0.8rem; font-weight: 800; color: #10B981; margin-bottom: 6px; text-transform: uppercase;">
+                            Teacher Manual Score Adjustment
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <label style="font-size: 0.8rem; color: #E2E8F0;">New Marks:</label>
+                            <input type="number" id="manualScore_${idx}" min="0" max="${q.max_marks}" step="0.5" value="${q.awarded_marks}" style="width: 70px; padding: 4px 8px; border-radius: 6px; border: 1px solid #10B981; background: #000; color: #10B981; font-weight: 700;">
+                            <input type="text" id="manualRemark_${idx}" placeholder="Teacher's note (e.g. Extra 1 mark for neat diagram)" style="flex: 1; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.8rem;">
+                            <button type="button" onclick="applyTeacherOverride(${idx})" style="padding: 5px 12px; background: #10B981; color: #000; border: none; border-radius: 6px; font-weight: 800; font-size: 0.8rem; cursor: pointer;">
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ask Examiner Panel -->
+                    <div class="ask-examiner-panel" id="askPanel_${idx}">
+                        <div style="font-size: 0.8rem; font-weight: 800; color: #A855F7; margin-bottom: 6px; text-transform: uppercase;">
+                            Ask the Examiner for Clarification
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="queryInput_${idx}" placeholder="e.g. Why did I lose marks on my diagram?" style="flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.85rem;">
+                            <button type="button" id="queryBtn_${idx}" onclick="submitExaminerQuery(${idx})" style="padding: 6px 14px; background: #9333EA; color: #fff; border: none; border-radius: 6px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
+                                Send
+                            </button>
+                        </div>
+                        <div id="examinerAnswer_${idx}" style="margin-top: 8px; font-size: 0.85rem; color: #E9D5FF; display: none; padding: 8px; background: rgba(0,0,0,0.4); border-radius: 6px; border-left: 3px solid #A855F7;"></div>
+                    </div>
+                `;
+                qContainer.appendChild(qCard);
+            });
+        }
+
+        // Split-Screen Inspector Controls
+        function openInspector(idx) {
+            if (!window.currentEvaluationData) return;
+            const q = window.currentEvaluationData.evaluation.question_breakdown[idx];
+            const aFilename = window.currentEvaluationData.a_image_filename;
+            
+            // Extract page number from citation (e.g. "Page 8" or "Pages 8 - 9" -> 8)
+            let pageNum = 1;
+            const match = (q.page_citations || '').match(/\d+/);
+            if (match) pageNum = parseInt(match[0]);
+            
+            const modal = document.getElementById('inspectorModal');
+            const img = document.getElementById('inspPageImg');
+            const title = document.getElementById('inspTitle');
+            const pageLabel = document.getElementById('inspPageLabel');
+            const dlLink = document.getElementById('inspDownloadLink');
+            const scorePill = document.getElementById('inspScorePill');
+            const details = document.getElementById('inspEvalDetails');
+            
+            const previewUrl = `/page_preview/${aFilename}/${pageNum}`;
+            img.src = previewUrl;
+            dlLink.href = previewUrl;
+            title.textContent = `Inspector: ${q.question_text}`;
+            pageLabel.textContent = `📄 Student Answer Sheet (Page ${pageNum})`;
+            scorePill.textContent = `${q.awarded_marks} / ${q.max_marks}`;
+            
+            const rb = q.rubric_breakdown || { concept_score: '-', diagram_score: '-', explanation_score: '-' };
+            details.innerHTML = `
+                <div style="font-weight: 700; color: #F8FAFC; font-size: 1.1rem; margin-bottom: 8px;">${q.question_text}</div>
+                <div style="margin-bottom: 12px;"><span class="citation-tag">📍 Located on Page ${pageNum}</span></div>
+                
+                <div class="evidence-box">
+                    <strong style="color: #38BDF8;">🔎 Student Evidence on Page ${pageNum}:</strong><br>
+                    ${q.evidence_quote || 'Answer and diagram identified.'}
+                </div>
+
+                <div class="rubric-grid" style="margin: 15px 0;">
+                    <div class="rubric-item">
+                        <div class="rubric-label">💡 Concept</div>
+                        <div class="rubric-score">${rb.concept_score}</div>
+                    </div>
+                    <div class="rubric-item">
+                        <div class="rubric-label">📐 Diagram</div>
+                        <div class="rubric-score">${rb.diagram_score}</div>
+                    </div>
+                    <div class="rubric-item">
+                        <div class="rubric-label">⚙️ Working</div>
+                        <div class="rubric-score">${rb.explanation_score}</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; font-size: 0.95rem; line-height: 1.6; color: #CBD5E1;">
+                    <strong style="color: #00F0FF;">EXAMINER REASONING:</strong><br>
+                    ${q.reasoning}
+                </div>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeInspector() {
+            document.getElementById('inspectorModal').style.display = 'none';
+        }
+
+        // Toggle Teacher Override Panel
+        function toggleTeacherOverride(idx) {
+            const p = document.getElementById(`overridePanel_${idx}`);
+            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+        }
+
+        // Apply Teacher Override
+        function applyTeacherOverride(idx) {
+            const inputScore = document.getElementById(`manualScore_${idx}`);
+            const inputRemark = document.getElementById(`manualRemark_${idx}`);
+            const newScore = parseFloat(inputScore.value);
+            
+            if (isNaN(newScore) || newScore < 0) {
+                alert("Please enter a valid positive score.");
+                return;
+            }
+            
+            const q = window.currentEvaluationData.evaluation.question_breakdown[idx];
+            if (newScore > q.max_marks) {
+                alert(`Maximum marks for this question is ${q.max_marks}.`);
+                return;
+            }
+            
+            q.awarded_marks = newScore;
+            if (inputRemark.value.trim()) {
+                q.reasoning = `${q.reasoning} [Teacher Note: ${inputRemark.value.trim()}]`;
+                document.getElementById(`reasoningText_${idx}`).textContent = q.reasoning;
+            }
+            
+            document.getElementById(`awardedVal_${idx}`).textContent = newScore;
+            
+            // Recalculate color
+            const ratio = newScore / q.max_marks;
+            let scoreColor = '#10B981';
+            if (ratio < 0.5) scoreColor = '#EF4444';
+            else if (ratio < 0.8) scoreColor = '#F59E0B';
+            
+            const badge = document.getElementById(`scoreBadge_${idx}`);
+            badge.style.color = scoreColor;
+            badge.style.borderColor = `${scoreColor}50`;
+            
+            recalculateOverallScores();
+            document.getElementById(`overridePanel_${idx}`).style.display = 'none';
+        }
+
+        // Toggle Ask Examiner Panel
+        function toggleAskExaminer(idx) {
+            const p = document.getElementById(`askPanel_${idx}`);
+            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+        }
+
+        // Submit query to /ask_examiner
+        async function submitExaminerQuery(idx) {
+            const input = document.getElementById(`queryInput_${idx}`);
+            const btn = document.getElementById(`queryBtn_${idx}`);
+            const answerBox = document.getElementById(`examinerAnswer_${idx}`);
+            const query = input.value.trim();
+            
+            if (!query) return;
+            
+            const q = window.currentEvaluationData.evaluation.question_breakdown[idx];
+            btn.disabled = true;
+            btn.textContent = "Asking...";
+            answerBox.style.display = 'block';
+            answerBox.textContent = "Consulting syllabus examiner...";
+            
+            try {
+                const resp = await fetch('/ask_examiner', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question_text: q.question_text,
+                        evidence_quote: q.evidence_quote || '',
+                        reasoning: q.reasoning,
+                        student_query: query,
+                        subject: window.currentEvaluationData.evaluation.detected_subject || 'Engineering'
+                    })
+                });
+                const resData = await resp.json();
+                if (resp.ok && resData.answer) {
+                    answerBox.innerHTML = `<strong>🎓 Examiner Advice:</strong> ${resData.answer}`;
+                } else {
+                    answerBox.textContent = "Examiner could not be reached right now.";
+                }
+            } catch (err) {
+                answerBox.textContent = "Error: " + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Send";
+            }
+        }
+
+        // Recalculate Overall Scores and VTU Grade
+        function recalculateOverallScores() {
+            if (!window.currentEvaluationData || !window.currentEvaluationData.evaluation) return;
+            const evalData = window.currentEvaluationData.evaluation;
+            
+            let totalAwarded = 0;
+            let totalMax = 0;
+            let attemptedAwarded = 0;
+            let attemptedMax = 0;
+            
+            if (evalData.question_breakdown && evalData.question_breakdown.length > 0) {
+                evalData.question_breakdown.forEach(q => {
+                    const marks = (parseFloat(q.awarded_marks) || 0);
+                    const max = (parseInt(q.max_marks) || 0);
+                    attemptedAwarded += marks;
+                    attemptedMax += max;
+                    
+                    if (q.is_considered !== false) {
+                        totalAwarded += marks;
+                        totalMax += max;
+                    }
+                });
+            } else {
+                totalAwarded = evalData.total_awarded_marks || 0;
+                totalMax = evalData.total_max_marks || 10;
+            }
+            
+            totalAwarded = Math.round(totalAwarded * 10) / 10;
+            evalData.total_awarded_marks = totalAwarded;
+            evalData.total_max_marks = totalMax;
+            
+            document.getElementById('scoreRange').textContent = totalAwarded;
+            document.getElementById('maxMarks').textContent = totalMax;
+            
+            const percent = totalMax > 0 ? Math.round((totalAwarded / totalMax) * 100) : 0;
+            document.getElementById('scorePercentBadge').textContent = `${percent}%`;
+            
+            // Show attempted vs official score if VTU module choice is active
+            const attDisplay = document.getElementById('attemptedScoreDisplay');
+            const schemeBanner = document.getElementById('vtuSchemeBanner');
+            if (evalData.vtu_choice_applied || (attemptedAwarded > totalAwarded)) {
+                attDisplay.textContent = `Attempted: ${Math.round(attemptedAwarded * 10) / 10} / ${attemptedMax}`;
+                if (schemeBanner) schemeBanner.style.display = 'block';
+            } else {
+                attDisplay.textContent = '';
+                if (schemeBanner) schemeBanner.style.display = 'none';
+            }
+            
+            // Determine VTU Class
+            let vtuGrade = "First Class with Distinction (FCD)";
+            if (percent < 40) vtuGrade = "Fail";
+            else if (percent < 50) vtuGrade = "Pass Class";
+            else if (percent < 60) vtuGrade = "Second Class (SC)";
+            else if (percent < 70) vtuGrade = "First Class (FC)";
+            
+            evalData.vtu_grade = vtuGrade;
+            const vtuBadge = document.getElementById('vtuGradeBadge');
+            if (vtuBadge) vtuBadge.textContent = `🏆 ${vtuGrade}`;
+        }
+
+        // 1-Click Official Marksheet PDF Generator
+        function generateOfficialGradeCard() {
+            if (!window.currentEvaluationData || !window.currentEvaluationData.evaluation) {
+                alert("Please complete an evaluation first.");
+                return;
+            }
+            
+            const evalData = window.currentEvaluationData.evaluation;
+            const subject = evalData.detected_subject || 'ENGINEERING ASSESSMENT';
+            const totalMarks = evalData.total_awarded_marks;
+            const maxMarks = evalData.total_max_marks;
+            const percentage = maxMarks > 0 ? ((totalMarks / maxMarks) * 100).toFixed(1) : '0';
+            const vtuGrade = evalData.vtu_grade || 'Evaluated';
+            const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            
+            let questionsHtml = '';
+            (evalData.question_breakdown || []).forEach((q, i) => {
+                const rb = q.rubric_breakdown || { concept_score: '-', diagram_score: '-', explanation_score: '-' };
+                const modBadge = q.module_num > 0 ? `[Mod ${q.module_num}] ` : '';
+                const isExtra = q.is_considered === false;
+                questionsHtml += `
+                    <tr style="${isExtra ? 'background: #fffbeb; color: #92400e;' : ''}">
+                        <td style="text-align: center; font-weight: bold;">${i + 1}</td>
+                        <td>
+                            <div style="font-weight: 600; color: ${isExtra ? '#b45309' : '#1e293b'};">
+                                ${modBadge}${q.question_text}
+                                ${isExtra ? ' <span style="font-size: 7.5pt; color: #b45309; font-weight: bold;">(Extra Attempt - Excluded from Total)</span>' : ''}
+                            </div>
+                            <div style="font-size: 8pt; color: #64748b; font-style: italic; margin-top: 2px;">
+                                ${q.page_citations ? q.page_citations + ' | ' : ''}Evidence: "${q.evidence_quote ? q.evidence_quote.substring(0, 75) + '...' : 'Verified'}"
+                            </div>
+                        </td>
+                        <td style="text-align: center;">${rb.concept_score}</td>
+                        <td style="text-align: center;">${rb.diagram_score}</td>
+                        <td style="text-align: center;">${rb.explanation_score}</td>
+                        <td style="text-align: center; font-weight: 600;">${q.max_marks}</td>
+                        <td style="text-align: center; font-weight: bold; color: ${isExtra ? '#9ca3af' : (q.awarded_marks >= q.max_marks * 0.5 ? '#047857' : '#b91c1c')};">
+                            ${isExtra ? `<del>${q.awarded_marks}</del>` : q.awarded_marks}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            const printWindow = window.open('', '_blank', 'width=900,height=1000');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Official Evaluation Marksheet - ${subject}</title>
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            margin: 20mm 15mm;
+                            color: #0f172a;
+                            font-size: 10pt;
+                        }
+                        .header-table {
+                            width: 100%;
+                            border-bottom: 2px solid #0f172a;
+                            padding-bottom: 12px;
+                            margin-bottom: 18px;
+                        }
+                        .uni-title {
+                            font-size: 14pt;
+                            font-weight: 800;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            color: #1e1b4b;
+                            text-align: center;
+                        }
+                        .sub-title {
+                            font-size: 10pt;
+                            text-align: center;
+                            color: #475569;
+                            margin-top: 3px;
+                            font-weight: 600;
+                        }
+                        .report-title {
+                            text-align: center;
+                            font-size: 11pt;
+                            font-weight: 800;
+                            margin-top: 8px;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            background: #f1f5f9;
+                            padding: 4px;
+                            border-radius: 4px;
+                        }
+                        .meta-grid {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 15px;
+                            font-size: 9pt;
+                            border: 1px solid #cbd5e1;
+                            border-radius: 6px;
+                            padding: 8px 12px;
+                            background: #f8fafc;
+                        }
+                        .meta-item {
+                            line-height: 1.5;
+                        }
+                        table.marks-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 16px;
+                        }
+                        table.marks-table th, table.marks-table td {
+                            border: 1px solid #cbd5e1;
+                            padding: 6px 8px;
+                            font-size: 9pt;
+                        }
+                        table.marks-table th {
+                            background: #e2e8f0;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                            font-size: 8pt;
+                            color: #334155;
+                        }
+                        .summary-box {
+                            display: flex;
+                            justify-content: space-between;
+                            border: 2px solid #0f172a;
+                            border-radius: 6px;
+                            padding: 12px 18px;
+                            margin-bottom: 16px;
+                            background: #f8fafc;
+                        }
+                        .summary-stat {
+                            text-align: center;
+                        }
+                        .stat-val {
+                            font-size: 16pt;
+                            font-weight: 900;
+                            color: #1e293b;
+                        }
+                        .stat-lbl {
+                            font-size: 8pt;
+                            font-weight: 700;
+                            color: #64748b;
+                            text-transform: uppercase;
+                        }
+                        .footer-seal {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: flex-end;
+                            margin-top: 30px;
+                            padding-top: 20px;
+                        }
+                        .seal-badge {
+                            border: 2px dashed #0284c7;
+                            padding: 8px 14px;
+                            border-radius: 6px;
+                            font-size: 8pt;
+                            color: #0369a1;
+                            font-weight: 700;
+                            text-align: center;
+                            background: #f0f9ff;
+                        }
+                        .sign-box {
+                            text-align: center;
+                            width: 180px;
+                            border-top: 1px solid #0f172a;
+                            padding-top: 5px;
+                            font-size: 9pt;
+                            font-weight: 700;
+                        }
+                        @media print {
+                            body { margin: 10mm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <table class="header-table">
+                        <tr>
+                            <td>
+                                <div class="uni-title">VISVESVARAYA TECHNOLOGICAL UNIVERSITY</div>
+                                <div class="sub-title">DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING • AI ASSESSMENT SYSTEM</div>
+                                <div class="report-title">CONFIDENTIAL CANDIDATE EVALUATION GRADE REPORT</div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <div><strong>Subject:</strong> ${subject}</div>
+                            <div><strong>Assessment Type:</strong> University Examination (Full Booklet)</div>
+                        </div>
+                        <div class="meta-item">
+                            <div><strong>Evaluation Date:</strong> ${today}</div>
+                            <div><strong>Engine:</strong> Multimodal Vision & ChromaDB RAG</div>
+                        </div>
+                        <div class="meta-item">
+                            <div><strong>Status:</strong> Evaluated & Verified</div>
+                            <div><strong>University Result:</strong> <span style="font-weight: 800; color: #0284c7;">${vtuGrade}</span></div>
+                        </div>
+                    </div>
+
+                    <table class="marks-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 35px;">Sl.</th>
+                                <th>Question Details & Evidence</th>
+                                <th style="width: 55px;">Concept</th>
+                                <th style="width: 55px;">Diagram</th>
+                                <th style="width: 55px;">Working</th>
+                                <th style="width: 60px;">Max</th>
+                                <th style="width: 65px;">Awarded</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${questionsHtml}
+                        </tbody>
+                    </table>
+
+                    <div class="summary-box">
+                        <div class="summary-stat">
+                            <div class="stat-val">${totalMarks} / ${maxMarks}</div>
+                            <div class="stat-lbl">${evalData.vtu_choice_applied ? 'Official VTU Score' : 'Total Score'}</div>
+                            ${evalData.vtu_choice_applied ? `<div style="font-size: 7.5pt; color: #64748b; margin-top: 2px;">Attempted: ${evalData.attempted_total_marks} / ${evalData.attempted_max_marks}</div>` : ''}
+                        </div>
+                        <div class="summary-stat">
+                            <div class="stat-val">${percentage}%</div>
+                            <div class="stat-lbl">Aggregate Percentage</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="stat-val" style="color: #0284c7;">${vtuGrade}</div>
+                            <div class="stat-lbl">Grading Category</div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 8.5pt; color: #475569; margin-bottom: 15px; border-left: 3px solid #0284c7; padding-left: 10px;">
+                        <strong>Examiner Feedback:</strong> ${evalData.general_feedback || 'Completed evaluation according to university syllabus criteria.'}
+                    </div>
+
+                    <div class="footer-seal">
+                        <div class="seal-badge">
+                            ⚡ AI MULTIMODAL VERIFIED<br>
+                            <span style="font-size: 7pt; font-weight: normal; color: #64748b;">Cryptographically Timestamped: ${today}</span>
+                        </div>
+                        <div class="sign-box">
+                            Chief Examiner / Evaluator<br>
+                            <span style="font-size: 7.5pt; color: #64748b; font-weight: normal;">Authorized Signature</span>
+                        </div>
+                    </div>
+
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                            }, 500);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+﻿# Environment variables & secrets (CRITICAL: Never push API keys)
+.env
+*.env
+!.env.example
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*.class
+*.so
+
+# Uploaded documents & student answer sheets
+uploads/*
+!uploads/.gitkeep
+
+# Temporary / OS files
+.DS_Store
+Thumbs.db
+*.log
+
+scratch/
