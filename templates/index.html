@@ -1648,6 +1648,7 @@
             }
             
             q.awarded_marks = newScore;
+            q.is_considered = true;
             if (inputRemark.value.trim()) {
                 q.reasoning = `${q.reasoning} [Teacher Note: ${inputRemark.value.trim()}]`;
                 document.getElementById(`reasoningText_${idx}`).textContent = q.reasoning;
@@ -1744,8 +1745,11 @@
             }
             
             totalAwarded = Math.round(totalAwarded * 10) / 10;
+            attemptedAwarded = Math.round(attemptedAwarded * 10) / 10;
             evalData.total_awarded_marks = totalAwarded;
             evalData.total_max_marks = totalMax;
+            evalData.attempted_total_marks = attemptedAwarded;
+            evalData.attempted_max_marks = attemptedMax;
             
             document.getElementById('scoreRange').textContent = totalAwarded;
             document.getElementById('maxMarks').textContent = totalMax;
@@ -1756,8 +1760,8 @@
             // Show attempted vs official score if VTU module choice is active
             const attDisplay = document.getElementById('attemptedScoreDisplay');
             const schemeBanner = document.getElementById('vtuSchemeBanner');
-            if (evalData.vtu_choice_applied || (attemptedAwarded > totalAwarded)) {
-                attDisplay.textContent = `Attempted: ${Math.round(attemptedAwarded * 10) / 10} / ${attemptedMax}`;
+            if (evalData.vtu_choice_applied && (attemptedAwarded > totalAwarded)) {
+                attDisplay.textContent = `Attempted: ${attemptedAwarded} / ${attemptedMax}`;
                 if (schemeBanner) schemeBanner.style.display = 'block';
             } else {
                 attDisplay.textContent = '';

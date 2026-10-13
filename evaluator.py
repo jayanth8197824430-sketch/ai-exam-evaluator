@@ -6,6 +6,131 @@ from google.genai import types
 
 load_dotenv()
 
+def sanitize_evaluation_data(data):
+    """
+    Enforces deterministic mathematical consistency on Gemini evaluation reports:
+    - Clamps individual question marks between 0 and max_marks.
+    - Synchronizes 3-part rubric breakdown (concept + diagram + working) to equal awarded_marks exactly.
+    - Calculates total_awarded_marks and total_max_marks as the true mathematical sum of questions.
+    - Recalculates aggregate percentage and VTU Grade Class deterministically.
+    """
+    if not isinstance(data, dict):
+        return {
+            "total_awarded_marks": 0.0,
+            "total_max_marks": 10,
+            "question_breakdown": [],
+            "strengths": [],
+            "missing_concepts": [],
+            "general_feedback": "Invalid evaluation data."
+        }
+
+    questions = data.get("question_breakdown", [])
+    if not isinstance(questions, list):
+        questions = []
+        data["question_breakdown"] = questions
+
+    total_awarded = 0.0
+    total_max = 0
+
+    for idx, q in enumerate(questions):
+        # 1. Sanitize max marks
+        try:
+            m_max = int(float(q.get("max_marks", 10)))
+        except (ValueError, TypeError):
+            m_max = 10
+        if m_max <= 0:
+            m_max = 10
+        q["max_marks"] = m_max
+
+        # 2. Sanitize awarded marks
+        try:
+            m_awarded = float(q.get("awarded_marks", 0.0))
+        except (ValueError, TypeError):
+            m_awarded = 0.0
+        m_awarded = max(0.0, min(float(m_max), round(m_awarded, 1)))
+        q["awarded_marks"] = m_awarded
+
+        # 3. Synchronize 3-part rubric breakdown
+        rb = q.get("rubric_breakdown")
+        if not isinstance(rb, dict):
+            c_max = max(1, round(m_max * 0.4))
+            d_max = max(1, round(m_max * 0.3))
+            e_max = max(1, m_max - c_max - d_max)
+            c_score = round(m_awarded * 0.4, 1)
+            d_score = round(m_awarded * 0.3, 1)
+            e_score = round(m_awarded - c_score - d_score, 1)
+            rb = {
+                "concept_score": c_score, "concept_max": c_max,
+                "diagram_score": d_score, "diagram_max": d_max,
+                "explanation_score": e_score, "explanation_max": e_max
+            }
+        else:
+            try:
+                c_max = int(float(rb.get("concept_max", round(m_max * 0.4))))
+                d_max = int(float(rb.get("diagram_max", round(m_max * 0.3))))
+                e_max = int(float(rb.get("explanation_max", m_max - c_max - d_max)))
+            except (ValueError, TypeError):
+                c_max = max(1, round(m_max * 0.4))
+                d_max = max(1, round(m_max * 0.3))
+                e_max = max(1, m_max - c_max - d_max)
+
+            if c_max + d_max + e_max != m_max:
+                e_max = max(0, m_max - c_max - d_max)
+
+            try:
+                c_score = float(rb.get("concept_score", 0.0))
+                d_score = float(rb.get("diagram_score", 0.0))
+                e_score = float(rb.get("explanation_score", 0.0))
+            except (ValueError, TypeError):
+                c_score = round(m_awarded * 0.4, 1)
+                d_score = round(m_awarded * 0.3, 1)
+                e_score = round(m_awarded - c_score - d_score, 1)
+
+            rubric_sum = round(c_score + d_score + e_score, 1)
+            if rubric_sum != m_awarded:
+                rem = round(m_awarded - (c_score + d_score), 1)
+                if 0 <= rem <= e_max:
+                    e_score = rem
+                else:
+                    c_score = round(m_awarded * 0.4, 1)
+                    d_score = round(m_awarded * 0.3, 1)
+                    e_score = round(m_awarded - c_score - d_score, 1)
+
+            rb["concept_score"] = round(c_score, 1)
+            rb["concept_max"] = c_max
+            rb["diagram_score"] = round(d_score, 1)
+            rb["diagram_max"] = d_max
+            rb["explanation_score"] = round(e_score, 1)
+            rb["explanation_max"] = e_max
+
+        q["rubric_breakdown"] = rb
+        if "is_considered" not in q:
+            q["is_considered"] = True
+
+        total_awarded += m_awarded
+        total_max += m_max
+
+    total_awarded = round(total_awarded, 1)
+    data["total_awarded_marks"] = total_awarded
+    data["total_max_marks"] = total_max if total_max > 0 else int(data.get("total_max_marks", 10))
+    data["attempted_total_marks"] = total_awarded
+    data["attempted_max_marks"] = data["total_max_marks"]
+
+    # Compute deterministic percentage and VTU Grade category
+    pct = (total_awarded / data["total_max_marks"] * 100) if data["total_max_marks"] > 0 else 0
+    if pct >= 70:
+        data["vtu_grade"] = "First Class with Distinction (FCD)"
+    elif pct >= 60:
+        data["vtu_grade"] = "First Class (FC)"
+    elif pct >= 50:
+        data["vtu_grade"] = "Second Class (SC)"
+    elif pct >= 40:
+        data["vtu_grade"] = "Pass Class"
+    else:
+        data["vtu_grade"] = "Fail"
+
+    return data
+
 def evaluate_answer(question, student_answer, reference_context, subject):
     """
     Evaluates the student's handwritten answer against the ground truth using Gemini API.
@@ -116,9 +241,9 @@ Produce an evaluation report with exactly these JSON keys:
                 )
             )
             
-            # Parse the JSON response
+            # Parse and sanitize the JSON response
             print(f"Success with model: {model_name}")
-            return json.loads(response.text)
+            return sanitize_evaluation_data(json.loads(response.text))
             
         except Exception as e:
             last_error = e
@@ -348,7 +473,8 @@ SUBJECT INTELLIGENCE: Always evaluate according to the actual subject shown on t
                     config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema)
                 )
                 data = json.loads(resp.text)
-                print(f"Full-Booklet evaluation SUCCESS with {m}! Found {len(data.get('question_breakdown', []))} questions.")
+                data = sanitize_evaluation_data(data)
+                print(f"Full-Booklet evaluation SUCCESS with {m}! Found {len(data.get('question_breakdown', []))} questions. Total Marks: {data['total_awarded_marks']}/{data['total_max_marks']}")
                 return data
             except Exception as e:
                 last_err = e
@@ -410,10 +536,11 @@ Keep the tone warm, respectful, and motivating.
 
 def apply_vtu_module_rules(eval_data):
     """
-    VTU 'Best-of-Module' Choice Rule Engine:
-    Under VTU schemes, question papers have 5 Modules (Q1/Q2, Q3/Q4, Q5/Q6, Q7/Q8, Q9/Q10).
-    If a student answers both questions within the same module, university rules state
-    that only the higher-scoring question counts towards the official marks.
+    VTU Choice & Module Tagging Engine:
+    - Extracts precise question numbers without false positives from technical terms (e.g. 3-way, 2PL, IPv4).
+    - Preserves 100% of attempted questions by default: all questions count towards the total score.
+    - Only flags true internal choices if a 10-question external scheme is explicitly detected (Q1..Q10 with Q > 5).
+    - NEVER corrupts or silently deletes attempted student marks.
     """
     import re
     
@@ -422,77 +549,86 @@ def apply_vtu_module_rules(eval_data):
         return eval_data
         
     def extract_main_q(text):
-        m = re.search(r'(?:Q(?:uestion)?\s*)?(\d{1,2})', text, re.IGNORECASE)
+        text = str(text or '').strip()
+        # 1. Match explicit "Q1", "Question 1", "Q. 1", "Q 1" at the start
+        m = re.match(r'^(?:Q(?:uestion)?\.?\s*|\bQ\s*)(\d{1,2})\b', text, re.IGNORECASE)
+        if m:
+            return int(m.group(1))
+        # 2. Match leading numbering e.g. "1.", "1.a", "1(a)", "1 -", "1)"
+        m = re.match(r'^(\d{1,2})\s*[\.\)\-a-zA-Z\s]', text)
+        if m:
+            return int(m.group(1))
+        # 3. Match Q prefix within first 25 characters (e.g. "[Q1.a]", "(Question 2)")
+        m = re.search(r'\b(?:Q|Question)\.?\s*(\d{1,2})\b', text[:25], re.IGNORECASE)
         if m:
             return int(m.group(1))
         return 0
-        
-    # Group sub-questions by main question
+
+    mq_list = [extract_main_q(q.get('question_text', '')) for q in questions]
+    valid_mqs = [mq for mq in mq_list if mq > 0]
+    max_mq = max(valid_mqs) if valid_mqs else 0
+    # A true 10-question VTU external paper has questions up to Q6..Q10 (5 modules x 2 questions)
+    is_external_10q_choice_paper = (max_mq > 5)
+
     main_q_map = {}
     for idx, q in enumerate(questions):
-        mq = extract_main_q(q.get('question_text', ''))
+        mq = mq_list[idx]
         q['main_q_num'] = mq
         
-        # Module assignment: 1..2 -> Mod 1, 3..4 -> Mod 2, 5..6 -> Mod 3, 7..8 -> Mod 4, 9..10 -> Mod 5
-        if 1 <= mq <= 10:
-            mod_num = (mq + 1) // 2
+        if is_external_10q_choice_paper:
+            mod_num = (mq + 1) // 2 if (1 <= mq <= 10) else ((idx % 5) + 1)
         else:
-            mod_num = 0
+            mod_num = mq if (1 <= mq <= 5) else (idx + 1)
+
         q['module_num'] = mod_num
         q['is_considered'] = True
         q['module_status'] = f"Module {mod_num} Attempted" if mod_num > 0 else "Attempted"
-        
+
         if mod_num not in main_q_map:
             main_q_map[mod_num] = {}
         if mq not in main_q_map[mod_num]:
             main_q_map[mod_num][mq] = []
         main_q_map[mod_num][mq].append(q)
-        
-    # Check each module for internal choices (e.g. Q1 vs Q2, Q7 vs Q8)
+
     choice_applied = False
-    for mod_num, mqs in main_q_map.items():
-        if mod_num == 0 or len(mqs) <= 1:
-            continue
-            
-        # Student attempted multiple main questions in the same module!
-        choice_applied = True
-        # Calculate sum of awarded marks for each main question in this module
-        scores = {}
-        for mq, q_list in mqs.items():
-            scores[mq] = sum(q.get('awarded_marks', 0) for q in q_list)
-            
-        # Find best-scoring question
-        best_mq = max(scores, key=scores.get)
-        
-        for mq, q_list in mqs.items():
-            if mq != best_mq:
-                for q in q_list:
-                    q['is_considered'] = False
-                    q['module_status'] = f"Extra Attempt in Module {mod_num} (Score: {scores[mq]} vs Q{best_mq}: {scores[best_mq]} - Excluded from Official Total)"
-            else:
-                for q in q_list:
-                    q['is_considered'] = True
-                    q['module_status'] = f"Module {mod_num} Choice Counted (Best of Module)"
-                    
-    # Calculate official VTU score vs attempted score
-    attempted_total = round(sum(q.get('awarded_marks', 0) for q in questions), 1)
-    attempted_max = sum(q.get('max_marks', 0) for q in questions)
-    
-    official_total = round(sum(q.get('awarded_marks', 0) for q in questions if q.get('is_considered', True)), 1)
-    official_max = sum(q.get('max_marks', 0) for q in questions if q.get('is_considered', True))
-    
+    if is_external_10q_choice_paper:
+        for mod_num, mqs in main_q_map.items():
+            if mod_num == 0 or len(mqs) <= 1:
+                continue
+            choice_applied = True
+            scores = {}
+            for mq, q_list in mqs.items():
+                scores[mq] = sum(q.get('awarded_marks', 0) for q in q_list)
+            best_mq = max(scores, key=scores.get)
+            for mq, q_list in mqs.items():
+                if mq != best_mq:
+                    for q in q_list:
+                        q['is_considered'] = False
+                        q['module_status'] = f"Extra Attempt in Module {mod_num} (Score: {scores[mq]} vs Q{best_mq}: {scores[best_mq]} - Excluded from Official Total)"
+                else:
+                    for q in q_list:
+                        q['is_considered'] = True
+                        q['module_status'] = f"Module {mod_num} Choice Counted (Best of Module)"
+
+    attempted_total = round(sum(float(q.get('awarded_marks', 0)) for q in questions), 1)
+    attempted_max = sum(int(q.get('max_marks', 0)) for q in questions)
+    official_total = round(sum(float(q.get('awarded_marks', 0)) for q in questions if q.get('is_considered', True)), 1)
+    official_max = sum(int(q.get('max_marks', 0)) for q in questions if q.get('is_considered', True))
+
     eval_data['attempted_total_marks'] = attempted_total
     eval_data['attempted_max_marks'] = attempted_max
     eval_data['vtu_official_marks'] = official_total
     eval_data['vtu_official_max'] = official_max
     eval_data['vtu_choice_applied'] = choice_applied
-    
-    # If choice was applied, official awarded marks reflects the choice
-    eval_data['total_awarded_marks'] = official_total
-    eval_data['total_max_marks'] = official_max
-    
-    # Recalculate VTU Grade based on official marks
-    percent = (official_total / official_max * 100) if official_max > 0 else 0
+
+    # Total awarded marks and max marks:
+    eval_data['total_awarded_marks'] = official_total if choice_applied else attempted_total
+    eval_data['total_max_marks'] = official_max if choice_applied else attempted_max
+
+    # Recalculate percentage and VTU Grade
+    effective_total = eval_data['total_awarded_marks']
+    effective_max = eval_data['total_max_marks']
+    percent = (effective_total / effective_max * 100) if effective_max > 0 else 0
     if percent >= 70:
         eval_data['vtu_grade'] = "First Class with Distinction (FCD)"
     elif percent >= 60:
@@ -503,5 +639,5 @@ def apply_vtu_module_rules(eval_data):
         eval_data['vtu_grade'] = "Pass Class"
     else:
         eval_data['vtu_grade'] = "Fail"
-        
+
     return eval_data
