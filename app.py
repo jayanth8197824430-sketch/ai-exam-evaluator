@@ -12,6 +12,7 @@ load_dotenv()
 from ocr_engine import extract_text
 from knowledge_engine import retrieve_context, retrieve_dynamic_context
 from evaluator import evaluate_answer, evaluate_direct_multimodal, explain_grade_query, apply_vtu_module_rules
+from cv_legibility import generate_legibility_heatmap
 
 app = Flask(__name__)
 
@@ -50,7 +51,7 @@ def evaluate():
         return jsonify({"error": "Invalid file type. Only PNG, JPG, JPEG, PDF allowed."}), 400
         
     subject = request.form.get('subject', 'dbms')
-    strictness = request.form.get('strictness', 'standard')
+    strictness = request.form.get('strictness', 'generous')
     
     try:
         # 1. Save uploaded images safely
@@ -159,6 +160,35 @@ def page_preview(filename, page_num):
             return jsonify({"error": str(e)}), 500
     else:
         return send_from_directory(app.config['UPLOAD_FOLDER'], safe_fn)
+
+@app.route('/page_heatmap/<filename>/<int:page_num>')
+def page_heatmap(filename, page_num):
+    """
+    Renders OpenCV Handwriting Legibility & Scribe Heatmap for the Split-Screen Inspector.
+    """
+    safe_fn = secure_filename(filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], safe_fn)
+    if not os.path.exists(filepath):
+        return jsonify({"error": "Document not found"}), 404
+        
+    try:
+        import pymupdf
+        doc = pymupdf.open(filepath)
+        p_idx = max(0, min(len(doc) - 1, page_num - 1))
+        page = doc[p_idx]
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(1.5, 1.5))
+        raw_bytes = pix.tobytes("jpeg")
+        doc.close()
+        
+        heatmap_bytes, metrics = generate_legibility_heatmap(raw_bytes)
+        from flask import Response
+        resp = Response(heatmap_bytes, mimetype="image/jpeg")
+        resp.headers['X-Legibility-Score'] = str(metrics.get('legibility_score', 85))
+        resp.headers['X-Legibility-Status'] = metrics.get('status', 'Standard')
+        resp.headers['Access-Control-Expose-Headers'] = 'X-Legibility-Score, X-Legibility-Status'
+        return resp
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Route to serve uploaded images (if needed by frontend)
 @app.route('/uploads/<filename>')

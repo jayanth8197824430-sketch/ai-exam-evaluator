@@ -19,7 +19,9 @@ def evaluate_answer(question, student_answer, reference_context, subject):
     subject_names = {
         "dbms": "Database Management Systems (DBMS)",
         "cn": "Computer Networks (CN)",
-        "dsa": "Data Structures and Algorithms (DSA)"
+        "dsa": "Data Structures and Algorithms (DSA)",
+        "bcs703": "Cryptography & Network Security (BCS703 / BCA703)",
+        "bca703": "Cryptography & Network Security (BCS703 / BCA703)"
     }
     
     full_subject_name = subject_names.get(subject.lower(), subject)
@@ -27,13 +29,14 @@ def evaluate_answer(question, student_answer, reference_context, subject):
     client = genai.Client(api_key=api_key)
     
     prompt = f"""
-You are a fair, generous, and empathetic university examiner for {full_subject_name} exams.
-You are given the extracted text from a question paper, the ground truth reference text from the textbook, and the student's OCR-extracted handwritten answer.
+You are a fair, generous, and empathetic university examiner evaluating {full_subject_name} engineering answers.
+You are given the extracted text from a question paper, the ground truth reference text from the curriculum, and the student's handwritten answer.
 
 Question Paper (OCR Extracted):
 {question}
 
-Ground Truth Reference: {reference_context}
+Ground Truth Reference (Curriculum Benchmark):
+{reference_context}
 
 Student Answer (OCR Extracted):
 {student_answer}
@@ -44,13 +47,19 @@ Evaluate the student's entire answer submission against the provided Question Pa
 CRITICAL RULE 0 - SUBJECT VALIDATION:
 Before evaluating, verify if the Question Paper and Answer Script match the selected subject: **{full_subject_name}**. If the documents are clearly about a completely different subject (e.g., they uploaded Computer Networks, but selected DBMS), you MUST reject it immediately! Return 0 for all marks, an empty question_breakdown array, and state in the general_feedback: "SUBJECT MISMATCH ERROR: You selected {full_subject_name}, but uploaded documents for a different subject. Evaluation aborted."
 
+CRITICAL RULE 1 — SEMANTIC EQUIVALENCE & INTENT OVER VERBATIM KEYWORDS:
+- The Ground Truth Reference is an instructor's topical benchmark, NOT a rigid keyword matching key.
+- Real students write under exam stress and explain engineering mechanisms in their own words, everyday language, or simplified analogies.
+- NEVER deduct marks or penalize a student simply because specific textbook phrases or formal keywords are missing, as long as the explanation demonstrates that the student understood the core concept, mechanism, or algorithm.
+- Treat conceptually sound paraphrasing and student terminology with the same value as formal textbook terms.
+
 Use the following Human-Like Generous Scoring Model:
 1. Question Mapping: Identify which questions from the Question Paper the student is answering.
-2. Generous Partial Marking (IMPORTANT): Be highly generous with partial marks. If the student demonstrates a general conceptual understanding, award at least 50-80% of the marks for that question, even if exact textbook keywords are missing. Do NOT give a 0 unless the answer is completely blank or totally irrelevant.
-3. OCR Forgiveness: Handwritten OCR often misses words, jumbles letters, or fails to read diagrams. Actively infer the student's intent. If a sentence is fragmented, assume the student wrote the correct concept but the scanner missed it, and DO NOT penalize them.
-4. Conceptual Reward: Reward the student for trying. If they explain a concept in their own words rather than textbook language, give them full credit for that concept.
-5. Diagram Assumption: If the question requires a diagram and the OCR text contains scattered words that look like labels, assume the student drew a correct diagram and award full diagram marks.
-6. Question-by-Question Breakdown: You MUST evaluate each question individually. Provide the marks awarded, maximum marks, and a positive, encouraging reason explaining why marks were awarded.
+2. Generous Partial Marking: Be highly generous with partial marks. If the student demonstrates a general conceptual understanding or core intuition, award 70-90% of the marks for that question. Do NOT give a 0 unless the answer is completely blank or totally irrelevant.
+3. OCR & Handwriting Forgiveness: Handwritten OCR often misses words, jumbles letters, or fails to read diagrams. Actively infer the student's intent. If a sentence is fragmented, assume the student wrote the correct concept, and give them the benefit of the doubt.
+4. Conceptual Reward: Reward the student for trying. Explaining a concept in their own voice is a sign of true understanding; award full credit for that concept.
+5. Diagram Intent: If the question asks for a diagram and there are scattered labels, boxes, or arrows, assume the student drew a valid schematic and award full or high diagram marks (80-100%).
+6. Question-by-Question Breakdown: Evaluate each question individually. Provide awarded_marks, max_marks, and a positive, encouraging reason explaining why marks were awarded.
 7. Irrelevant/Unreadable Rejection: Only return 0 marks if the text is literally complete gibberish or a completely different subject.
 
 Produce an evaluation report with exactly these JSON keys:
@@ -173,12 +182,13 @@ def _render_file_to_jpeg_parts(file_path, is_answer_booklet=False, max_pages=3):
             
     return parts
 
-def evaluate_direct_multimodal(q_filepath, a_filepath, subject, reference_context="", strictness="standard"):
+def evaluate_direct_multimodal(q_filepath, a_filepath, subject, reference_context="", strictness="generous"):
     """
     Direct Full-Booklet Multimodal Evaluation:
     Uploads documents to Google Cloud Files API and evaluates the ENTIRE booklet
     from Page 1 to the end, grading ALL attempted questions and diagrams simultaneously.
     Includes page citations, evidence quotes, rubric breakdowns, strictness settings, and VTU grading.
+    Calibrated for SEMANTIC EQUIVALENCE & EMPATHETIC HUMAN EVALUATION (never penalizes for student phrasing).
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -187,33 +197,39 @@ def evaluate_direct_multimodal(q_filepath, a_filepath, subject, reference_contex
     subject_names = {
         "dbms": "Database Management Systems (DBMS)",
         "cn": "Computer Networks (CN)",
-        "dsa": "Data Structures and Algorithms (DSA)"
+        "dsa": "Data Structures and Algorithms (DSA)",
+        "bcs703": "Cryptography & Network Security (BCS703 / BCA703)",
+        "bca703": "Cryptography & Network Security (BCS703 / BCA703)"
     }
     full_subject_name = subject_names.get(subject.lower(), subject)
     client = genai.Client(api_key=api_key)
     
-    # Strictness directives
+    # Strictness directives - calibrated for semantic understanding and empathetic human scoring
     strictness_guidelines = {
         "generous": (
-            "EVALUATION RIGOR: GENEROUS (Formative Assessment / Practice Mode).\n"
-            "- Be highly encouraging and empathetic. Award 70-90% partial marks for answers capturing core concepts.\n"
-            "- Overlook minor handwriting imperfections, spelling errors, or slight formula omissions.\n"
-            "- Award full diagram marks if a relevant schematic or labeled drawing is attempted."
+            "EVALUATION RIGOR: EMPATHETIC / HIGH GENEROSITY (Recommended for Handwritten Student Scripts).\n"
+            "- Core Principle: Prioritize student intent, intuitive logic, and conceptual understanding above all else.\n"
+            "- Semantic Equivalence: Fully accept informal wording, simplified everyday analogies, and student's own vocabulary. Award 80-100% partial marks whenever the core intuition or mechanism is captured.\n"
+            "- Zero Robotic Keyword Penalties: NEVER deduct marks simply because specific textbook phrases or formal keywords are missing if the explanation demonstrates that the student understood the concept.\n"
+            "- Diagrams: Award 85-100% diagram marks for any recognizable schematic, block diagram, or flowchart showing key components and flow, even if hand-drawn roughly without a ruler.\n"
+            "- Vision & OCR Grace: Give maximum benefit of the doubt for handwriting irregularities, faint ink, or minor spelling slips."
         ),
         "standard": (
-            "EVALUATION RIGOR: STANDARD (University Internal Assessment / IA Mode).\n"
-            "- Balance conceptual understanding with technical accuracy. Award 50-80% partial marks.\n"
-            "- Diagrams must have recognizable structure, correct labels, and clean directional flow.\n"
-            "- Deduct partial marks for missing working steps or incomplete algorithm explanations."
+            "EVALUATION RIGOR: STANDARD IA (Balanced University Assessment - Concept First).\n"
+            "- Core Principle: Value semantic equivalence and clear engineering understanding. Award 65-90% partial marks for solid conceptual attempts.\n"
+            "- Semantic Understanding over Keyword Matching: Ground Truth is a conceptual benchmark, NOT a verbatim string-matching key. If the student conveys the working principle in their own terms, award high concept marks.\n"
+            "- Diagrams: Award 75-90% diagram marks if core entities and directional relationships are shown.\n"
+            "- Only deduct marks for genuinely incorrect technical statements, fatal logical contradictions, or completely omitted requirements."
         ),
         "strict": (
-            "EVALUATION RIGOR: STRICT (VTU External Examination Board Standard).\n"
-            "- Enforce rigorous university standards. Demand exact technical terminology, keywords, and accurate definitions.\n"
-            "- Diagrams must be accurate with precise labels, interfaces, or protocol handshakes.\n"
-            "- Award 0 marks for vague, non-technical generalizations or irrelevant statements."
+            "EVALUATION RIGOR: EXTERNAL BOARD STANDARD (Technical Rigor with Fair Semantic Recognition).\n"
+            "- Core Principle: Maintain formal academic examination standards while still respecting student expression.\n"
+            "- Accept accurate paraphrasing and conceptual descriptions (award 60-80% for sound partial explanations).\n"
+            "- Diagrams should have clear entity blocks and logical connections (award 70-85% for correct structural attempts).\n"
+            "- Deduct marks only where core technical mechanisms are substantively missing or incorrect, NOT for stylistic phrasing differences."
         )
     }
-    rigor_directive = strictness_guidelines.get(strictness.lower(), strictness_guidelines["standard"])
+    rigor_directive = strictness_guidelines.get(strictness.lower(), strictness_guidelines["generous"])
 
     uploaded_files = []
     try:
@@ -225,15 +241,31 @@ def evaluate_direct_multimodal(q_filepath, a_filepath, subject, reference_contex
         uploaded_files.append(a_file)
         
         prompt = f"""
-You are a senior university chief examiner for {full_subject_name} engineering examinations.
+You are a senior university chief examiner evaluating real handwritten answer booklets for {full_subject_name} engineering examinations.
 You are provided with:
 1. The official Question Paper document.
 2. The student's COMPLETE handwritten answer booklet (all pages).
 
-Ground Truth Reference from Curriculum:
+Ground Truth Reference (Curriculum Benchmark):
 {reference_context}
 
 {rigor_directive}
+
+CRITICAL EXAMINER DIRECTIVE — SEMANTIC EQUIVALENCE & EMPATHETIC HUMAN EVALUATION:
+1. SEMANTIC EQUIVALENCE OVER EXACT KEYWORDS:
+   - The Ground Truth Reference above is a topical benchmark, NOT a verbatim string-matching answer key.
+   - Real students write under exam stress and time pressure; they naturally explain technical concepts in their own words, everyday phrasing, or simplified descriptions.
+   - NEVER penalize a student or deduct marks simply because they omitted specific textbook jargon or verbatim phrasing, as long as their explanation communicates the correct conceptual mechanism, algorithm, or intuition.
+   - Treat conceptually accurate paraphrases, synonyms, and engineering intuition with the same validity as formal textbook sentences.
+2. GENEROUS PARTIAL CREDIT FOR CONCEPTUAL GRASP:
+   - Look for reasons to AWARD marks based on what the student understood, rather than excuses to deduct marks.
+   - If a student demonstrates the general intuition or core mechanism of a question, award 70%–90% partial marks.
+   - Only award 0 marks if a question is completely left blank or the response is entirely irrelevant/gibberish.
+3. DIAGRAM INTENT & SCHEMATIC EFFORT:
+   - Engineering students hand-draw diagrams under exam constraints.
+   - If a diagram includes the primary blocks, arrows, or structural flow—even if hand-drawn without a ruler, slightly uneven, or with informal labels—award 75%–100% of the diagram marks.
+4. HANDWRITING & VISUAL TOLERANCE:
+   - Answer scripts are handwritten. Grant the student the benefit of the doubt on faint ink, slanted handwriting, or minor spelling slips.
 
 TASK:
 1. Scan through the ENTIRE answer booklet from Page 1 to the very last page.
@@ -248,7 +280,7 @@ TASK:
      * Working Principle / Explanation score (explanation_score out of explanation_max)
      * Note: concept_score + diagram_score + explanation_score MUST equal awarded_marks.
      * concept_max + diagram_max + explanation_max MUST equal max_marks.
-   - Provide clear, encouraging reasoning explaining marks awarded and missing concepts.
+   - Provide clear, encouraging reasoning highlighting what the student explained well, giving positive feedback and friendly suggestions for further study.
 4. Calculate the total awarded marks and total maximum marks for all attempted questions.
 5. Determine the student's VTU Grade category:
    - "First Class with Distinction (FCD)" if percentage >= 70%
@@ -256,7 +288,7 @@ TASK:
    - "Second Class (SC)" if 50% <= percentage < 60%
    - "Pass Class" if 40% <= percentage < 50%
    - "Fail" if percentage < 40%
-6. Provide overall strengths, missing concepts, and encouraging general feedback.
+6. Provide overall strengths, missing concepts (as constructive study tips), and encouraging general feedback.
 7. Provide a concise transcription summary of all attempted answers in "transcribed_summary".
 
 SUBJECT INTELLIGENCE: Always evaluate according to the actual subject shown on the Question Paper document. If the detected subject differs from the selected option ({full_subject_name}), adapt and evaluate the paper based on the Question Paper, noting the detected subject in "detected_subject". Never abort with 0 marks due to a dropdown mismatch.
@@ -352,7 +384,7 @@ def explain_grade_query(question_text, evidence_quote, current_reasoning, studen
     
     client = genai.Client(api_key=api_key)
     prompt = f"""
-You are a friendly, encouraging university professor and examiner for {subject}.
+You are a warm, encouraging university professor and mentor for {subject}.
 A student has reviewed their evaluated answer and has a question about their marks.
 
 Question: {question_text}
@@ -362,10 +394,10 @@ Examiner's Grading Reasoning: {current_reasoning}
 Student's Clarification Query:
 "{student_query}"
 
-Provide a concise (2-4 sentences), encouraging, and technically precise response explaining:
-1. Exactly why the marks were awarded or where points were lost according to academic standards.
-2. An actionable tip on how the student can score full marks next time (e.g., specific missing diagram labels, missing formula, or step).
-Be polite, professional, and inspiring.
+Provide a concise (2-4 sentences), encouraging, and empathetic response:
+1. Reassure the student, affirming the conceptual understanding and intuition they demonstrated in their answer.
+2. Provide a constructive, actionable tip on what minor addition (e.g. an extra diagram label, key formula step, or technical nuance) will help them secure full 100% marks in their next exam.
+Keep the tone warm, respectful, and motivating.
 """
     try:
         resp = client.models.generate_content(

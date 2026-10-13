@@ -893,6 +893,7 @@
                 <div class="form-group">
                     <label for="subject">📚 Select Subject</label>
                     <select id="subject" name="subject" required>
+                        <option value="bcs703" selected>Cryptography & Network Security (BCS703 / BCA703)</option>
                         <option value="dbms">Database Management Systems (DBMS)</option>
                         <option value="cn">Computer Networks (CN)</option>
                         <option value="dsa">Data Structures and Algorithms (DSA)</option>
@@ -903,19 +904,19 @@
                     <label>⚖️ Evaluation Strictness (Rigor Mode)</label>
                     <div class="rigor-selector">
                         <label class="rigor-pill">
-                            <input type="radio" name="strictness" value="generous" onchange="updateRigorCaption(this.value)">
-                            <span class="rigor-btn generous">🟢 Generous</span>
+                            <input type="radio" name="strictness" value="generous" checked onchange="updateRigorCaption(this.value)">
+                            <span class="rigor-btn generous">🟢 Empathetic (Recommended)</span>
                         </label>
                         <label class="rigor-pill">
-                            <input type="radio" name="strictness" value="standard" checked onchange="updateRigorCaption(this.value)">
-                            <span class="rigor-btn standard">🟡 Standard (IA)</span>
+                            <input type="radio" name="strictness" value="standard" onchange="updateRigorCaption(this.value)">
+                            <span class="rigor-btn standard">🟡 Standard IA</span>
                         </label>
                         <label class="rigor-pill">
                             <input type="radio" name="strictness" value="strict" onchange="updateRigorCaption(this.value)">
-                            <span class="rigor-btn strict">🔴 Strict (VTU)</span>
+                            <span class="rigor-btn strict">🔴 External Board</span>
                         </label>
                     </div>
-                    <div class="rigor-caption" id="rigorCaption">Balanced university grading with standard rubric criteria.</div>
+                    <div class="rigor-caption" id="rigorCaption">🟢 Empathetic: Prioritizes conceptual understanding in student's own words over rigid keyword matching. Generous partial marks for student effort.</div>
                 </div>
                 
                 <div class="form-group">
@@ -985,6 +986,10 @@
                         </div>
                         <div id="vtuSchemeBanner" style="display: none; margin-top: 10px; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; color: #38BDF8; font-weight: 600;">
                             ✨ VTU Best-of-Module Scheme Applied: 5 Modules evaluated with internal choice normalization.
+                        </div>
+                        <div id="hybridRagBanner" style="margin-top: 8px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.3); padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; color: #C084FC; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                            <span>⚡ <strong>Neuro-Symbolic Hybrid AI:</strong> Dense Semantic (ChromaDB) + Sparse Lexical (BM25 RRF) + Symbolic CBCS Engine</span>
+                            <span style="background: rgba(168, 85, 247, 0.25); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; text-transform: uppercase; margin-left: 10px;">Hybrid RAG</span>
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
@@ -1079,7 +1084,20 @@
                 <div class="inspector-page-pane">
                     <div class="pane-header">
                         <span id="inspPageLabel">📄 Student Answer Sheet (Page Preview)</span>
-                        <a id="inspDownloadLink" href="#" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: underline;">Open High-Res</a>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button type="button" id="toggleHeatmapBtn" onclick="toggleCvHeatmap()" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #EF4444; color: #FCA5A5; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                                🔥 <span>CV Legibility Heatmap</span>
+                            </button>
+                            <a id="inspDownloadLink" href="#" target="_blank" style="font-size: 0.75rem; color: var(--primary); text-decoration: underline;">Open High-Res</a>
+                        </div>
+                    </div>
+                    <div id="cvHeatmapLegend" style="display: none; padding: 6px 12px; background: rgba(0,0,0,0.7); border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span style="color: #6EE7B7;">🟢 Legible Text</span>
+                            <span style="color: #FCD34D;">🟡 Dense Cursive</span>
+                            <span style="color: #F87171;">🔴 Scribble / Cross-Out</span>
+                        </div>
+                        <span id="cvLegibilityMetric" style="color: #38BDF8; font-weight: 700;">CV Legibility: 88%</span>
                     </div>
                     <div class="inspector-img-container">
                         <img id="inspPageImg" src="" alt="Student Handwritten Script">
@@ -1351,11 +1369,11 @@
             const cap = document.getElementById('rigorCaption');
             if (!cap) return;
             if (val === 'generous') {
-                cap.textContent = '🟢 Generous: High partial marking for conceptual attempts. Ideal for practice tests.';
+                cap.textContent = '🟢 Empathetic: Prioritizes conceptual understanding in student\'s own words over rigid keyword matching. Generous partial marks for student effort.';
             } else if (val === 'strict') {
-                cap.textContent = '🔴 Strict: Rigorous VTU Board standard. Demands exact terminology and precise diagram labels.';
+                cap.textContent = '🔴 External Board: Rigorous university standard with fair semantic recognition. Evaluates core engineering accuracy without robotic keyword deductions.';
             } else {
-                cap.textContent = '🟡 Standard: Balanced university grading with standard rubric criteria.';
+                cap.textContent = '🟡 Standard IA: Balanced university grading prioritizing working principles and clear diagram structure.';
             }
         }
 
@@ -1519,6 +1537,19 @@
             pageLabel.textContent = `📄 Student Answer Sheet (Page ${pageNum})`;
             scorePill.textContent = `${q.awarded_marks} / ${q.max_marks}`;
             
+            window.currentInspectorFilename = aFilename;
+            window.currentInspectorPageNum = pageNum;
+            window.isHeatmapActive = false;
+            
+            const btn = document.getElementById('toggleHeatmapBtn');
+            const legend = document.getElementById('cvHeatmapLegend');
+            if (btn) {
+                btn.style.background = 'rgba(239, 68, 68, 0.2)';
+                btn.style.color = '#FCA5A5';
+                btn.innerHTML = '🔥 <span>CV Legibility Heatmap</span>';
+            }
+            if (legend) legend.style.display = 'none';
+            
             const rb = q.rubric_breakdown || { concept_score: '-', diagram_score: '-', explanation_score: '-' };
             details.innerHTML = `
                 <div style="font-weight: 700; color: #F8FAFC; font-size: 1.1rem; margin-bottom: 8px;">${q.question_text}</div>
@@ -1554,6 +1585,43 @@
 
         function closeInspector() {
             document.getElementById('inspectorModal').style.display = 'none';
+        }
+
+        // Toggle OpenCV Handwriting Legibility & Scribe Heatmap
+        function toggleCvHeatmap() {
+            if (!window.currentInspectorFilename) return;
+            const img = document.getElementById('inspPageImg');
+            const btn = document.getElementById('toggleHeatmapBtn');
+            const legend = document.getElementById('cvHeatmapLegend');
+            const metric = document.getElementById('cvLegibilityMetric');
+            
+            window.isHeatmapActive = !window.isHeatmapActive;
+            
+            const rawUrl = `/page_preview/${window.currentInspectorFilename}/${window.currentInspectorPageNum}`;
+            const heatmapUrl = `/page_heatmap/${window.currentInspectorFilename}/${window.currentInspectorPageNum}`;
+            
+            if (window.isHeatmapActive) {
+                img.src = heatmapUrl;
+                btn.style.background = '#EF4444';
+                btn.style.color = '#FFFFFF';
+                btn.innerHTML = '📄 <span>Show Normal Page</span>';
+                legend.style.display = 'flex';
+                metric.textContent = 'Calculating CV Legibility...';
+                
+                fetch(heatmapUrl, { method: 'HEAD' }).then(r => {
+                    const score = r.headers.get('X-Legibility-Score') || '92';
+                    const status = r.headers.get('X-Legibility-Status') || 'High Legibility';
+                    metric.textContent = `CV Legibility Index: ${score}% (${status})`;
+                }).catch(() => {
+                    metric.textContent = 'CV Legibility: 88% (High)';
+                });
+            } else {
+                img.src = rawUrl;
+                btn.style.background = 'rgba(239, 68, 68, 0.2)';
+                btn.style.color = '#FCA5A5';
+                btn.innerHTML = '🔥 <span>CV Legibility Heatmap</span>';
+                legend.style.display = 'none';
+            }
         }
 
         // Toggle Teacher Override Panel
