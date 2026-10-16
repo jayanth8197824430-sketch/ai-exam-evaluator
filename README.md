@@ -8,7 +8,9 @@
 
 An intelligent, transparent, and university-grade examination assessment platform engineered for handwritten university answer booklets (specifically calibrated for **VTU CBCS 5-Module Scheme**). 
 
-Unlike legacy systems that rely on error-prone OCR pipelines or generic \'black-box\' LLM grading, this system uses **direct multimodal visual reasoning**, **query-aware Dynamic RAG**, and **human-in-the-loop audit tools** to make evaluation accurate, defensible, and instantaneous.
+> **“Not another copy. Not another trend. An original idea, built to make a difference.”**
+
+Unlike legacy systems that rely on error-prone OCR pipelines or generic 'black-box' LLM grading, this system uses **direct multimodal visual reasoning**, **query-aware Dynamic RAG**, and **human-in-the-loop audit tools** to make evaluation accurate, defensible, and instantaneous.
 
 ---
 

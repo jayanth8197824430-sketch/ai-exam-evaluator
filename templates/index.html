@@ -60,8 +60,14 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
 
+        .header-brand-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
         .header-title {
-            font-size: 1.75rem;
+            font-size: 1.65rem;
             font-weight: 800;
             background: linear-gradient(to right, var(--primary), var(--secondary));
             -webkit-background-clip: text;
@@ -69,8 +75,67 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .header-manifesto {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.86rem;
+            letter-spacing: 0.3px;
+            margin-top: 3px;
+            flex-wrap: wrap;
+        }
+
+        .manifesto-tag-pill {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.35);
+            color: #00F0FF;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
             letter-spacing: 1px;
             text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .manifesto-dot {
+            width: 6px;
+            height: 6px;
+            background: #00F0FF;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00F0FF;
+            animation: pulseManifesto 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseManifesto {
+            0%, 100% { opacity: 0.4; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.25); box-shadow: 0 0 12px #00F0FF; }
+        }
+
+        .manifesto-quote {
+            font-style: italic;
+            color: #94A3B8;
+        }
+
+        .manifesto-quote-silver {
+            color: #CBD5E1;
+            font-weight: 500;
+        }
+
+        .manifesto-quote-glow {
+            background: linear-gradient(90deg, #00F0FF 0%, #C084FC 50%, #38BDF8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            font-style: normal;
+            letter-spacing: 0.4px;
+            filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.35));
         }
 
         /* Main Container Layout */
@@ -391,6 +456,84 @@
             color: var(--primary);
             text-transform: uppercase;
             letter-spacing: 2px;
+        }
+
+        /* Manifesto Hero Card for Empty State */
+        .manifesto-card-container {
+            margin-top: 25px;
+            max-width: 530px;
+            width: 100%;
+            background: rgba(11, 17, 30, 0.75);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            border-radius: 12px;
+            padding: 22px 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 0 20px rgba(0, 240, 255, 0.05);
+            position: relative;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .manifesto-card-container:hover {
+            border-color: rgba(0, 240, 255, 0.45);
+            box-shadow: 0 12px 40px rgba(0, 240, 255, 0.15), inset 0 0 25px rgba(0, 240, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .manifesto-card-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, rgba(0, 240, 255, 0.15), rgba(168, 85, 247, 0.15));
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--primary);
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 3px 12px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .manifesto-card-quote {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            margin-bottom: 14px;
+            font-style: italic;
+        }
+
+        .manifesto-card-dim {
+            color: #94A3B8;
+            font-weight: 500;
+        }
+
+        .manifesto-card-gradient {
+            background: linear-gradient(90deg, #00F0FF 0%, #C084FC 50%, #38BDF8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            font-style: normal;
+            letter-spacing: 0.3px;
+            filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.35));
+        }
+
+        .manifesto-card-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .feature-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94A3B8;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.2px;
         }
 
         /* Loader */
@@ -865,8 +1008,18 @@
 
     <!-- Header -->
     <header>
-        <div class="header-title">
-            ✨ Intelligent Assessment and Grading using AI & NLP
+        <div class="header-brand-group">
+            <div class="header-title">
+                ✨ Intelligent Assessment and Grading using AI & NLP
+            </div>
+            <div class="header-manifesto">
+                <span class="manifesto-tag-pill">
+                    <span class="manifesto-dot"></span> ORIGINAL WORK
+                </span>
+                <span class="manifesto-quote">
+                    “<span class="manifesto-quote-silver">Not another copy. Not another trend.</span> <span class="manifesto-quote-glow">An original idea, built to make a difference.</span>”
+                </span>
+            </div>
         </div>
         <div class="header-right">
             <div style="font-size: 0.85rem; color: #94A3B8; font-weight: 500;">Powered by Gemini & ChromaDB</div>
@@ -947,9 +1100,26 @@
         <div class="panel right-panel">
             
             <div class="empty-state" id="emptyState">
-                <img src="/static/books_art.jpg" alt="Upload Documents" style="max-width: 280px; opacity: 0.9;">
+                <img src="/static/books_art.jpg" alt="Upload Documents" style="max-width: 250px; opacity: 0.9; margin-bottom: 10px;">
                 <h3>Ready to Evaluate</h3>
-                <p style="margin-top: 0.5rem;">Select a subject and upload the files to begin.</p>
+                <p style="margin-top: 0.4rem; color: #94A3B8; font-size: 0.92rem;">Select an engineering subject, upload question & answer scripts to run multimodal AI grading.</p>
+
+                <!-- Manifesto Showcase Card -->
+                <div class="manifesto-card-container">
+                    <div class="manifesto-card-badge">
+                        <span>⚡ THE CORE PHILOSOPHY</span>
+                    </div>
+                    <div class="manifesto-card-quote">
+                        “<span class="manifesto-card-dim">Not another copy. Not another trend.</span><br>
+                        <span class="manifesto-card-gradient">An original idea, built to make a difference.</span>”
+                    </div>
+                    <div class="manifesto-card-features">
+                        <span class="feature-chip">💎 Native Multimodal Vision</span>
+                        <span class="feature-chip">⚡ Dense + BM25 Hybrid RAG</span>
+                        <span class="feature-chip">⚖️ VTU CBCS Engine</span>
+                        <span class="feature-chip">🔥 CV Legibility Scribe</span>
+                    </div>
+                </div>
             </div>
 
             <div class="loader-container" id="loader">
@@ -2023,6 +2193,10 @@
                             Chief Examiner / Evaluator<br>
                             <span style="font-size: 7.5pt; color: #64748b; font-weight: normal;">Authorized Signature</span>
                         </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 25px; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 8pt; color: #64748b; font-style: italic; letter-spacing: 0.3px;">
+                        “Not another copy. Not another trend. An original idea, built to make a difference.”
                     </div>
 
                     <script>
